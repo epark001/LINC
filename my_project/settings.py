@@ -26,7 +26,8 @@ SECRET_KEY = 'e@lcj1k54wpc_6-%rtr^1)^)xb4dqabe3h3%a=cgmm_&pj_rqx'
 DEBUG = True
 
 ALLOWED_HOSTS = [
-	 'https://clinc-app.herokuapp.com/'
+	 'https://clinc-app.herokuapp.com/',
+	 'clinc-app.herokuapp.com'
 ]
 
 # Application definition
