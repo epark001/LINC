@@ -25,7 +25,9 @@ SECRET_KEY = 'e@lcj1k54wpc_6-%rtr^1)^)xb4dqabe3h3%a=cgmm_&pj_rqx'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+	 'https://clinc-app.herokuapp.com/'
+]
 
 # Application definition
 
