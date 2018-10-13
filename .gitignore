@@ -1,0 +1,11 @@
+### Python ###
+# Byte-compiled / optimized / DLL files
+*.py[cod]
+__pycache__/
+
+### Django ###
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
