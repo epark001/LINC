@@ -22,7 +22,8 @@ def validate_twilio_request(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         # Create an instance of the RequestValidator class
-        validator = RequestValidator(os.environ.get('TWILIO_AUTH_TOKEN'))
+        #validator = RequestValidator(os.environ.get('TWILIO_AUTH_TOKEN'))
+        validator = RequestValidator('33808ddf18ac53ba89ffff98fbf2c460');
 
         # Validate the request using its URL, POST data,
         # and X-TWILIO-SIGNATURE header
@@ -73,6 +74,8 @@ def incoming_message():
 
     # Return the TwiML
     return str(resp)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
