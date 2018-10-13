@@ -1,0 +1,17 @@
+# Download the helper library from https://www.twilio.com/docs/python/install
+from twilio.rest import Client
+
+
+# Your Account Sid and Auth Token from twilio.com/console
+account_sid = 'ACce3d35b11990b0a5f86d17795ae7ffe6'
+auth_token = '33808ddf18ac53ba89ffff98fbf2c460'
+client = Client(account_sid, auth_token)
+
+message = client.messages \
+                .create(
+                     body="Join Earth's mightiest heroes. Like Kevin Bacon.",
+                     from_='+15017122661',
+                     to='+15558675310'
+                 )
+
+print(message.sid)

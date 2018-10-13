@@ -4,9 +4,6 @@ from firebase_admin import db
 
 app = Flask(__name__)
 
-
-
-
 @app.route('/webhook', methods=['POST'])
 def webhook():
     if request.method == 'POST':
