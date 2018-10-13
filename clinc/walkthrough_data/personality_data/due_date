@@ -1,0 +1,7 @@
+{% if assignment['values'][0]['error'] %}
+	Sorry, I can't find any record of the assignment called {{ assignment['values'][0]['tokens'] }}.
+{% elif assignment['values'][0]['value'] %}
+	The {{ assignment['values'][0]['tokens'] }} is due on {{ assignment['values'][0]['value'] }}.
+{% else %}
+	Please specify an assignment.
+{% endif %}
