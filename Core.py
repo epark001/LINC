@@ -8,6 +8,8 @@ import requests
 import os
 #import datetime
 import logging
+import unicodedata
+
 
 from bson import json_util
 from datetime import datetime, timedelta, timezone
@@ -15,6 +17,9 @@ from datetime import datetime, timedelta, timezone
 #from flask_sqlalchemy import SQLAlchemy
 #import sqlalchemy
 #import MySQLdb
+
+latest_transcript =""
+
 
 CLOUDSQL_CONNECTION_NAME = os.environ.get("CLOUDSQL_CONNECTION_NAME")
 CLOUDSQL_USER = os.environ.get("CLOUDSQL_USER")
@@ -33,6 +38,39 @@ auth_token = "33808ddf18ac53ba89ffff98fbf2c460"
 
 
 app = Flask(__name__)
+
+
+
+@app.route("/calls", methods=['GET', 'POST'])
+def record():
+    client = Client(account_sid, auth_token)
+    # Start our TwiML response
+    response = VoiceResponse()
+    # Use <Say> to give the caller some instructions
+    response.say('Hello this is LINC. What would you like to talk about?')
+    # Use <Record> to record the caller's message
+    response.record(transcribe=True, playBeep=True,timeout=4)
+    # response.pause(length=3)
+    client = Client(account_sid, auth_token)
+    trans_list = client.transcriptions.list()
+    for transcription in trans_list:
+       latest_transcript = transcription.transcription_text
+       status= transcription.status
+       if(latest_transcript!=None):
+           unicodedata.normalize('NFKD', latest_transcript).encode('ascii','ignore')
+           print(status);
+           print(transcription.sid);
+           print(latest_transcript);
+           transcription.delete();
+           break
+       else:
+           response.say("I'm sorry. I didn't get that. Can you repeat it?")
+    print(latest_transcript != "hello")
+    if (latest_transcript != "hello"):
+       print("boolean worked");
+       response.redirect("http://4b930e15.ngrok.io/voice_response")
+    response.hangup()
+    return str(response)
 
 def queryClinc(inputQuery, phoneNum):
     #url = "https://"+hostname+"/"+version+"/query"
@@ -116,20 +154,6 @@ def webhook():
         return "", 200
     else:
         abort(400)
-
-@app.route("/calls", methods=["GET", "POST"])
-def record():
-    """Returns TwiML which prompts the caller to record a message"""
-    # Start our TwiML response
-    response = VoiceResponse()
-    # Use <Say> to give the caller some instructions
-    response.say("Hello. Please leave a message after the beep.")
-    # Use <Record> to record the caller"s message
-    response.record()
-    # End the call with <Hangup>
-    response.hangup()
-    return str(response)
-
 
 @app.errorhandler(500)
 def server_error(e):
