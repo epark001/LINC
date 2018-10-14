@@ -1,29 +1,61 @@
-from functools import wraps
-
-from twilio.twiml.voice_response import VoiceResponse
+from flask import Flask, request, abort
+from flask import Flask, request, redirect
 from twilio.twiml.messaging_response import MessagingResponse
-from twilio.request_validator import RequestValidator
+from twilio.rest import Client
+from twilio.twiml.voice_response import VoiceResponse
 import json
 import requests
-
-from flask import (
-    Flask,
-    abort,
-    current_app,
-    request,
-)
-
 import os
+import MySQLdb
 
-clincHost = "mhacks.clinc.ai"
-clincVer = "v1"
+CLOUDSQL_CONNECTION_NAME = os.environ.get('CLOUDSQL_CONNECTION_NAME')
+CLOUDSQL_USER = os.environ.get('CLOUDSQL_USER')
+CLOUDSQL_PASSWORD = os.environ.get('CLOUDSQL_PASSWORD')
+clincHost = os.environ.get('CLINC_HOST')
+clincVer = os.environ.get('CLINC_VER')
+account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
+auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
+
 
 app = Flask(__name__)
 
-@app.route('/query', methods=['POST']) 
-def queryPost():
-    print("hullo")
-    return "henlo"
+@app.route('/connectSQL', methods=['GET'])
+def connect_to_cloudsql():
+    # When deployed to App Engine, the `SERVER_SOFTWARE` environment variable
+    # will be set to 'Google App Engine/version'.
+    if os.getenv('SERVER_SOFTWARE', '').startswith('Google App Engine/'):
+        # Connect using the unix socket located at
+        # /cloudsql/cloudsql-connection-name.
+        cloudsql_unix_socket = os.path.join(
+            '/cloudsql', CLOUDSQL_CONNECTION_NAME)
+
+        db = MySQLdb.connect(
+            unix_socket=cloudsql_unix_socket,
+            user=CLOUDSQL_USER,
+            passwd=CLOUDSQL_PASSWORD)
+
+    # If the unix socket is unavailable, then try to connect using TCP. This
+    # will work if you're running a local MySQL server or using the Cloud SQL
+    # proxy, for example:
+    #
+    #   $ cloud_sql_proxy -instances=your-connection-name=tcp:3306
+    #
+    else:
+        db = MySQLdb.connect(
+            host='127.0.0.1', user=CLOUDSQL_USER, passwd=CLOUDSQL_PASSWORD)
+    return db
+
+@app.route('/fetchSQLvars', methods=['GET'])
+def fetchSQLvars(self):
+    #"""Simple request handler that shows all of the MySQL variables."""
+    self.response.headers['Content-Type'] = 'text/plain'
+
+    db = connect_to_cloudsql()
+    cursor = db.cursor()
+    cursor.execute('SHOW VARIABLES')
+
+    for r in cursor.fetchall():
+        self.response.write('{}\n'.format(r))
 
 def queryClinc(inputQuery):
     headers = {
@@ -40,8 +72,8 @@ def queryClinc(inputQuery):
     url = "https://"+hostname+"/"+version+"/query"
     output = requests.post(url2, data = json.dumps(payload), headers = headers)
     output = json.loads(output.text)
-    output['visuals']['speakableResponse']
-
+    response = output['visuals']['speakableResponse']
+    return reponse
 
 def authClinc():
     authForm = {
@@ -58,63 +90,38 @@ def authClinc():
     output = json.loads(output.text)
     return "Bearer "+output['access_token']
 
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    if request.method == 'POST':
+        client = Client(account_sid, auth_token)
+        message_history = client.messages.list()
+        for message in client.messages.list():
+            print (message.body);
+            print (message.from_);
+            break
+        message = client.messages \
+            .create(
+                body="Hi! Message received",
+                from_='+19525294321',
+                to='+13476269937'
+                )
+        return '', 200
+    else:
+        abort(400)
 
-def validate_twilio_request(f):
-    """Validates that incoming requests genuinely originated from Twilio"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        # Create an instance of the RequestValidator class
-        validator = RequestValidator(os.environ.get('TWILIO_AUTH_TOKEN'))
+@app.route("/calls", methods=['GET', 'POST'])
+def record():
+    """Returns TwiML which prompts the caller to record a message"""
+    # Start our TwiML response
+    response = VoiceResponse()
+    # Use <Say> to give the caller some instructions
+    response.say('Hello. Please leave a message after the beep.')
+    # Use <Record> to record the caller's message
+    response.record()
+    # End the call with <Hangup>
+    response.hangup()
+    return str(response)
 
-        # Validate the request using its URL, POST data,
-        # and X-TWILIO-SIGNATURE header
-        request_valid = validator.validate(
-            request.url,
-            request.form,
-            request.headers.get('X-TWILIO-SIGNATURE', ''))
-
-        # Continue processing the request if it's valid, return a 403 error if
-        # it's not
-        if request_valid or current_app.debug:
-            return f(*args, **kwargs)
-        else:
-            return abort(403)
-    return decorated_function
-
-
-@app.route('/voice', methods=['POST'])
-@validate_twilio_request
-def incoming_call():
-    """Twilio Voice URL - receives incoming calls from Twilio"""
-    # Create a new TwiML response
-    resp = VoiceResponse()
-
-    # <Say> a message to the caller
-    from_number = request.form['From']
-    body = """
-    Thanks for calling!
-    Your phone number is {0}. I got your call because of Twilio's webhook.
-    Goodbye!""".format(' '.join(from_number))
-    resp.say(body)
-
-    # Return the TwiML
-    return str(resp)
-
-
-@app.route('/message', methods=['POST'])
-@validate_twilio_request
-def incoming_message():
-    """Twilio Messaging URL - receives incoming messages from Twilio"""
-    # Create a new TwiML response
-    resp = MessagingResponse()
-
-    # <Message> a text back to the person who texted us
-    body = "Your text to me was {0} characters long. Webhooks are neat :)" \
-        .format(len(request.values['Body']))
-    resp.message(body)
-
-    # Return the TwiML
-    return str(resp)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()

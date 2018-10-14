@@ -1,13 +1,28 @@
 runtime: python
 env: flex
-entrypoint: gunicorn -b :$PORT webhook:app
+entrypoint: gunicorn -b :$PORT Core:app
 
 runtime_config:
   python_version: 3
+
+  #
+  # # Uncomment for Cloud SQL
+  # beta_settings:
+  #   cloud_sql_instances: "INSTANCE_CONNECTION_NAME"
+  #
+  # This sample incurs costs to run on the App Engine flexible environment.
+  # The settings below are to reduce costs during testing and are not appropriate
+  # for production use. For more information, see:
+  # https://cloud.google.com/appengine/docs/flexible/python/configuring-your-app-with-app-yaml
 
 # [START gae_flex_twilio_env]
 env_variables:
     TWILIO_ACCOUNT_SID: ACce3d35b11990b0a5f86d17795ae7ffe6
     TWILIO_AUTH_TOKEN: 33808ddf18ac53ba89ffff98fbf2c460
     TWILIO_NUMBER: 19525294321
+    CLOUDSQL_CONNECTION_NAME: linc-sql
+    CLOUDSQL_USER: root
+    CLOUDSQL_PASSWORD: 1234567890
+    CLINC_HOST: mhacks.clinc.ai
+    CLINC_VER: v1
 # [END gae_flex_twilio_env]
