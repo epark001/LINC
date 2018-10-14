@@ -7,7 +7,7 @@ runtime_config:
 
 # [START gae_flex_twilio_env]
 env_variables:
-    TWILIO_ACCOUNT_SID: AC88a96de03a704efb9b406e2fd12594cf
-    TWILIO_AUTH_TOKEN: eb8c884d2caafaa6ea643217845a3420
+    TWILIO_ACCOUNT_SID: ACce3d35b11990b0a5f86d17795ae7ffe6
+    TWILIO_AUTH_TOKEN: 33808ddf18ac53ba89ffff98fbf2c460
     TWILIO_NUMBER: 19525294321
 # [END gae_flex_twilio_env]
