@@ -14,13 +14,17 @@ app = Flask(__name__)
 def webhook():
     if request.method == 'POST':
         client = Client(account_sid, auth_token)
+        message_history = client.messages.list()
+        for message in client.messages.list():
+            print message.body;
+            print message.from_;
+            break
         message = client.messages \
             .create(
-                body="",
+                body="Hi! Message received",
                 from_='+19525294321',
                 to='+13476269937'
-                )
-        print(message)
+                ) 
         return '', 200
     else:
         abort(400)
